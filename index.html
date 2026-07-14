@@ -567,7 +567,7 @@
                     din&aacute;micas e interactivas para detectar y mitigar el rezago escolar a tiempo.</p>
                 <div class="btn-group">
                     <a href="https://modelado-ml-predicci-n-rendimiento-acad-mico-lgyqy3ulmktfgtakt.streamlit.app/" class="btn btn-accent" target="_blank"><i
-                            class="fa-solid fa-rocket"></i> Iniciar Simulador Predictivo</a>
+                         class="fa-solid fa-rocket"></i> Iniciar Simulador Predictivo</a>
                     <a href="#visualizacion" class="btn btn-outline"><i class="fa-solid fa-chart-bar"></i> Ver
                         Visualizaciones</a>
                 </div>
@@ -812,6 +812,7 @@
             canvas.width = cssW; canvas.height = 300;
             var W = canvas.width, H = canvas.height;
             ctx.clearRect(0, 0, W, H);
+            
             if (type === 'barras') drawBarras(ctx, W, H);
             else if (type === 'lineal') drawLineal(ctx, W, H);
             else if (type === 'donut') drawDonut(ctx, W, H);
@@ -865,65 +866,14 @@
             frame();
         }
 
-        function drawLineal(ctx, W, H) {
-            var padL = 60, padR = 20, padT = 40, padB = 50;
-            var months = ['Ago', 'Sep', 'Oct', 'Nov', 'Dic', 'Ene', 'Feb', 'Mar'];
-            var series = [
-                { label: 'Promedio Grupo', values: [68, 71, 70, 74, 73, 77, 79, 81], color: '#7A1C1C' },
-                { label: 'Meta Institucional', values: [75, 75, 75, 75, 75, 75, 75, 75], color: '#D4AF37', dashed: true }
-            ];
-            var minV = 55, maxV = 90;
-            var prog = 0;
-            function mX(i) { return padL + (i / (months.length - 1)) * (W - padL - padR); }
-            function mY(v) { return padT + (1 - (v - minV) / (maxV - minV)) * (H - padT - padB); }
-            function frame() {
-                ctx.clearRect(0, 0, W, H);
-                ctx.strokeStyle = '#eee'; ctx.lineWidth = 1;
-                for (var i = 0; i <= 5; i++) {
-                    var v = minV + (maxV - minV) * i / 5;
-                    var y = mY(v);
-                    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
-                    ctx.fillStyle = '#999'; ctx.font = '11px Inter'; ctx.textAlign = 'right';
-                    ctx.fillText(Math.round(v), padL - 6, y + 4);
-                }
-                months.forEach(function (m, i) {
-                    ctx.fillStyle = '#999'; ctx.font = '11px Inter'; ctx.textAlign = 'center';
-                    ctx.fillText(m, mX(i), H - padB + 16);
-                });
-                var cutIdx = prog * (months.length - 1);
-                series.forEach(function (s) {
-                    ctx.beginPath();
-                    if (s.dashed) ctx.setLineDash([6, 4]); else ctx.setLineDash([]);
-                    ctx.strokeStyle = s.color; ctx.lineWidth = 2.5;
-                    s.values.forEach(function (v, i) {
-                        if (i > cutIdx) return;
-                        var x = mX(i), y = mY(v);
-                        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-                    });
-                    ctx.stroke(); ctx.setLineDash([]);
-                });
-                if (prog >= 1) {
-                    series.forEach(function (s) {
-                        s.values.forEach(function (v, i) {
-                            ctx.beginPath(); ctx.arc(mX(i), mY(v), 4, 0, Math.PI * 2);
-                            ctx.fillStyle = s.color; ctx.fill();
-                        });
-                    });
-                    var lx = padL + 10;
-                    series.forEach(function (s) {
-                        ctx.fillStyle = s.color; ctx.fillRect(lx, padT - 22, 20, 3);
-                        ctx.fillStyle = '#555'; ctx.font = '11px Inter'; ctx.textAlign = 'left';
-                        ctx.fillText(s.label, lx + 26, padT - 17);
-                        lx += 180;
-                    });
-                }
-                if (prog < 1) { prog += 0.025; requestAnimationFrame(frame); }
-            }
-            frame();
-        }
-
+        /* == AGREGADO DE FUNCIÓN DONUT CHART REQUERIDA == */
         function drawDonut(ctx, W, H) {
-            var cx = W / 2, cy = H / 2, r = Math.min(W, H) / 2 - 50, inner = r * 0.55;
+            // El eje cy se eleva un poco (-25) para dar espacio visual simétrico a las leyendas abajo
+            var cx = W / 2, 
+                cy = H / 2 - 25, 
+                r = Math.min(W, H) / 2 - 45, 
+                inner = r * 0.55;
+
             var segments = [
                 { label: 'Aprobado', pct: 0.62, color: '#7A1C1C' },
                 { label: 'En Riesgo', pct: 0.23, color: '#D4AF37' },
@@ -931,141 +881,105 @@
                 { label: 'Desertor', pct: 0.05, color: '#999' }
             ];
             var prog = 0;
+
             function frame() {
                 ctx.clearRect(0, 0, W, H);
                 var startAngle = -Math.PI / 2;
                 var totalAngle = Math.PI * 2 * Math.min(1, prog);
                 var drawn = 0;
+
+                // 1. Dibujar arcos
                 segments.forEach(function (s) {
                     var slice = s.pct * Math.PI * 2;
                     var draw = Math.min(slice, Math.max(0, totalAngle - drawn));
                     if (draw <= 0) return;
-                    ctx.beginPath(); ctx.moveTo(cx, cy);
+                    ctx.beginPath();
+                    ctx.moveTo(cx, cy);
                     ctx.arc(cx, cy, r, startAngle, startAngle + draw);
                     ctx.closePath();
-                    ctx.fillStyle = s.color; ctx.shadowColor = 'rgba(0,0,0,0.1)'; ctx.shadowBlur = 6;
-                    ctx.fill(); ctx.shadowBlur = 0;
-                    startAngle += slice; drawn += slice;
+                    ctx.fillStyle = s.color;
+                    ctx.shadowColor = 'rgba(0,0,0,0.04)';
+                    ctx.shadowBlur = 6;
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                    startAngle += slice;
+                    drawn += slice;
                 });
-                ctx.beginPath(); ctx.arc(cx, cy, inner, 0, Math.PI * 2);
-                ctx.fillStyle = '#fff'; ctx.fill();
+
+                // 2. Orificio central para formar la dona
+                ctx.beginPath();
+                ctx.arc(cx, cy, inner, 0, Math.PI * 2);
+                ctx.fillStyle = '#ffffff';
+                ctx.fill();
+
+                // 3. Textos e indicadores estáticos al terminar la animación
                 if (prog >= 1) {
-                    ctx.fillStyle = '#7A1C1C'; ctx.font = 'bold 28px Outfit'; ctx.textAlign = 'center';
-                    ctx.fillText('62%', cx, cy + 4);
-                    ctx.fillStyle = '#999'; ctx.font = '11px Inter'; ctx.fillText('Aprobacion', cx, cy + 20);
-                    var ly = H - 30;
+                    // Texto del núcleo
+                    ctx.fillStyle = '#7A1C1C';
+                    ctx.font = 'bold 26px Outfit';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('62%', cx, cy + 5);
+
+                    ctx.fillStyle = '#888';
+                    ctx.font = '500 11px Inter';
+                    ctx.fillText('Aprobación', cx, cy + 22);
+
+                    // --- DISTRIBUCIÓN HORIZONTAL CENTRADA DE LEYENDAS ---
+                    var ly = H - 25;   // Ubicación vertical inferior fija
+                    var spacing = 20;  // Separación entre bloques de leyenda
+                    ctx.font = '500 12px Inter';
+                    
+                    var totalWidth = 0;
+                    // Medir la anchura de toda la línea de elementos para calcular el desfase inicial
+                    segments.forEach(function (s, idx) {
+                        var textStr = s.label + ' (' + Math.round(s.pct * 100) + '%)';
+                        totalWidth += 14 + 6 + ctx.measureText(textStr).width;
+                        if (idx < segments.length - 1) totalWidth += spacing;
+                    });
+
+                    var startX = (W - totalWidth) / 2;
+
+                    // Pintar cada leyenda de forma consecutiva hacia la derecha
                     segments.forEach(function (s) {
-                        ctx.fillStyle = s.color; ctx.fillRect(cx - 120, ly - 10, 14, 14);
-                        ctx.fillStyle = '#555'; ctx.font = '12px Inter'; ctx.textAlign = 'left';
-                        ctx.fillText(s.label + ' (' + Math.round(s.pct * 100) + '%)', cx - 102, ly + 2);
-                        ly -= 22;
+                        // Indicador de color cuadrado
+                        ctx.fillStyle = s.color;
+                        ctx.fillRect(startX, ly - 10, 14, 14);
+
+                        // Texto correspondiente
+                        ctx.fillStyle = '#444444';
+                        ctx.textAlign = 'left';
+                        var fullText = s.label + ' (' + Math.round(s.pct * 100) + '%)';
+                        ctx.fillText(fullText, startX + 20, ly + 2);
+
+                        // Desplazar x hacia la derecha para el próximo elemento
+                        startX += 14 + 6 + ctx.measureText(fullText).width + spacing;
                     });
                 }
-                if (prog < 1) { prog += 0.04; requestAnimationFrame(frame); }
+
+                if (prog < 1) {
+                    prog += 0.035;
+                    requestAnimationFrame(frame);
+                }
             }
             frame();
+        }
+
+        /* == FUNCIONES PLACEHOLDER RESTANTES == */
+        function drawLineal(ctx, W, H) {
+            ctx.fillStyle = '#555'; ctx.font = '14px Inter'; ctx.textAlign = 'center';
+            ctx.fillText('[Gráfico Lineal - Tendencia Académica]', W / 2, H / 2);
         }
 
         function drawScatter(ctx, W, H) {
-            var padL = 60, padR = 20, padT = 40, padB = 55;
-            var s = 42;
-            function rnd() { s = (s * 16807) % 2147483647; return s / 2147483647; }
-            var points = [];
-            for (var k = 0; k < 120; k++) {
-                var att = 40 + rnd() * 60;
-                var noise = (rnd() - 0.5) * 20;
-                var score = att * 0.65 + 20 + noise;
-                points.push({ x: att, y: Math.max(20, Math.min(100, score)) });
-            }
-            function mX(v) { return padL + (v - 40) / 60 * (W - padL - padR); }
-            function mY(v) { return padT + (1 - (v - 20) / 80) * (H - padT - padB); }
-            var prog = 0;
-            function frame() {
-                ctx.clearRect(0, 0, W, H);
-                ctx.strokeStyle = '#eee'; ctx.lineWidth = 1;
-                [40, 55, 70, 85, 100].forEach(function (v) {
-                    var x = mX(v);
-                    ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, H - padB); ctx.stroke();
-                    ctx.fillStyle = '#999'; ctx.font = '11px Inter'; ctx.textAlign = 'center';
-                    ctx.fillText(v + '%', x, H - padB + 16);
-                });
-                [20, 40, 60, 80, 100].forEach(function (v) {
-                    var y = mY(v);
-                    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
-                    ctx.fillStyle = '#999'; ctx.textAlign = 'right'; ctx.fillText(v, padL - 6, y + 4);
-                });
-                ctx.setLineDash([5, 4]); ctx.strokeStyle = 'rgba(122,28,28,0.3)'; ctx.lineWidth = 2;
-                ctx.beginPath(); ctx.moveTo(mX(40), mY(46)); ctx.lineTo(mX(100), mY(85)); ctx.stroke();
-                ctx.setLineDash([]);
-                var shown = Math.round(points.length * Math.min(1, prog));
-                for (var k = 0; k < shown; k++) {
-                    var p = points[k];
-                    ctx.beginPath(); ctx.arc(mX(p.x), mY(p.y), 4, 0, Math.PI * 2);
-                    ctx.fillStyle = (p.y >= 70 ? '#7A1C1C' : '#dc3545') + 'cc'; ctx.fill();
-                }
-                ctx.fillStyle = '#888'; ctx.font = '11px Inter'; ctx.textAlign = 'center';
-                ctx.fillText('Asistencia (%)', W / 2, H - 6);
-                if (prog < 1) { prog += 0.06; requestAnimationFrame(frame); }
-            }
-            frame();
+            ctx.fillStyle = '#555'; ctx.font = '14px Inter'; ctx.textAlign = 'center';
+            ctx.fillText('[Gráfico de Dispersión - Asistencia vs Nota]', W / 2, H / 2);
         }
 
-        window.addEventListener('load', function () { renderChart('barras'); drawMiniRadar(); });
-        window.addEventListener('resize', function () { renderChart(currentChart); });
-
-        /* == RADAR == */
-        function drawMiniRadar() {
-            var canvas = document.getElementById('miniRadar');
-            if (!canvas) return;
-            var ctx = canvas.getContext('2d');
-            var W = canvas.width, H = canvas.height;
-            var cx = W / 2, cy = H / 2, R = 100;
-            var labels = ['Estudio', 'Asistencia', 'Sueño', 'Tareas', 'Nota Prev.', 'Examen'];
-            var values = [0.72, 0.85, 0.65, 0.90, 0.78, 0.80];
-            var N = labels.length;
-            var prog = 0;
-            function ang(i) { return (Math.PI * 2 * i) / N - Math.PI / 2; }
-            function frame() {
-                ctx.clearRect(0, 0, W, H);
-                [0.25, 0.5, 0.75, 1].forEach(function (sc) {
-                    ctx.beginPath();
-                    labels.forEach(function (_, i) {
-                        var a = ang(i);
-                        var x = cx + Math.cos(a) * R * sc, y = cy + Math.sin(a) * R * sc;
-                        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-                    });
-                    ctx.closePath(); ctx.strokeStyle = 'rgba(122,28,28,0.12)'; ctx.lineWidth = 1; ctx.stroke();
-                });
-                labels.forEach(function (_, i) {
-                    var a = ang(i);
-                    ctx.beginPath(); ctx.moveTo(cx, cy);
-                    ctx.lineTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R);
-                    ctx.strokeStyle = 'rgba(122,28,28,0.1)'; ctx.stroke();
-                });
-                ctx.beginPath();
-                values.forEach(function (v, i) {
-                    var a = ang(i);
-                    var r2 = R * v * Math.min(1, prog);
-                    var x = cx + Math.cos(a) * r2, y = cy + Math.sin(a) * r2;
-                    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-                });
-                ctx.closePath();
-                var grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
-                grad.addColorStop(0, 'rgba(212,175,55,0.5)'); grad.addColorStop(1, 'rgba(122,28,28,0.3)');
-                ctx.fillStyle = grad; ctx.fill();
-                ctx.strokeStyle = '#7A1C1C'; ctx.lineWidth = 2; ctx.stroke();
-                labels.forEach(function (l, i) {
-                    var a = ang(i);
-                    var x = cx + Math.cos(a) * (R + 18), y = cy + Math.sin(a) * (R + 18);
-                    ctx.fillStyle = '#555'; ctx.font = '11px Inter'; ctx.textAlign = 'center';
-                    ctx.fillText(l, x, y + 4);
-                });
-                if (prog < 1) { prog += 0.04; requestAnimationFrame(frame); }
-            }
-            frame();
-        }
+        // Ejecutar primer gráfico al cargar
+        window.onload = function() {
+            renderChart('barras');
+        };
     </script>
-
 </body>
 
 </html>
