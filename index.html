@@ -551,7 +551,8 @@
             <li><a href="#metodologia">Metodolog&iacute;a</a></li>
             <li><a href="#visualizacion">Visualizaci&oacute;n</a></li>
             <li><a href="#tecnologia">Tecnolog&iacute;a</a></li>
-            <li><a href="https://modelado-ml-predicci-n-rendimiento-acad-mico-lgyqy3ulmktfgtakt.streamlit.app/" class="nav-btn" target="_blank"><i class="fa-solid fa-gauge-high"></i>
+            <li><a href="https://modelado-ml-predicci-n-rendimiento-acad-mico-lgyqy3ulmktfgtakt.streamlit.app/"
+                    class="nav-btn" target="_blank"><i class="fa-solid fa-gauge-high"></i>
                     Abrir Tablero</a></li>
         </ul>
     </nav>
@@ -566,8 +567,9 @@
                 <p>Un ecosistema inteligente que fusiona modelos supervisados de Machine Learning con visualizaciones
                     din&aacute;micas e interactivas para detectar y mitigar el rezago escolar a tiempo.</p>
                 <div class="btn-group">
-                    <a href="https://modelado-ml-predicci-n-rendimiento-acad-mico-lgyqy3ulmktfgtakt.streamlit.app/" class="btn btn-accent" target="_blank"><i
-                            class="fa-solid fa-rocket"></i> Iniciar Simulador Predictivo</a>
+                    <a href="https://modelado-ml-predicci-n-rendimiento-acad-mico-lgyqy3ulmktfgtakt.streamlit.app/"
+                        class="btn btn-accent" target="_blank"><i class="fa-solid fa-rocket"></i> Iniciar Simulador
+                        Predictivo</a>
                     <a href="#visualizacion" class="btn btn-outline"><i class="fa-solid fa-chart-bar"></i> Ver
                         Visualizaciones</a>
                 </div>
@@ -699,8 +701,9 @@
                             para compartir con tutores y padres de familia.</li>
                     </ul>
                     <div class="btn-group" style="margin-top: 26px;">
-                        <a href="https://modelado-ml-predicci-n-rendimiento-acad-mico-lgyqy3ulmktfgtakt.streamlit.app/" class="btn btn-primary" target="_blank"><i
-                                class="fa-solid fa-gauge-high"></i> Abrir Tablero Interactivo</a>
+                        <a href="https://modelado-ml-predicci-n-rendimiento-acad-mico-lgyqy3ulmktfgtakt.streamlit.app/"
+                            class="btn btn-primary" target="_blank"><i class="fa-solid fa-gauge-high"></i> Abrir Tablero
+                            Interactivo</a>
                     </div>
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 16px;">
@@ -923,7 +926,12 @@
         }
 
         function drawDonut(ctx, W, H) {
-            var cx = W / 2, cy = H / 2, r = Math.min(W, H) / 2 - 50, inner = r * 0.55;
+            // cy se eleva un poco (-35) para garantizar espacio simétrico para las leyendas abajo
+            var cx = W / 2,
+                cy = H / 2 - 35,
+                r = Math.min(W, H) / 2 - 60,
+                inner = r * 0.55;
+
             var segments = [
                 { label: 'Aprobado', pct: 0.62, color: '#7A1C1C' },
                 { label: 'En Riesgo', pct: 0.23, color: '#D4AF37' },
@@ -931,37 +939,89 @@
                 { label: 'Desertor', pct: 0.05, color: '#999' }
             ];
             var prog = 0;
+
             function frame() {
                 ctx.clearRect(0, 0, W, H);
                 var startAngle = -Math.PI / 2;
                 var totalAngle = Math.PI * 2 * Math.min(1, prog);
                 var drawn = 0;
+
+                // 1. Renderizado de los segmentos de arco
                 segments.forEach(function (s) {
                     var slice = s.pct * Math.PI * 2;
                     var draw = Math.min(slice, Math.max(0, totalAngle - drawn));
                     if (draw <= 0) return;
-                    ctx.beginPath(); ctx.moveTo(cx, cy);
+                    ctx.beginPath();
+                    ctx.moveTo(cx, cy);
                     ctx.arc(cx, cy, r, startAngle, startAngle + draw);
                     ctx.closePath();
-                    ctx.fillStyle = s.color; ctx.shadowColor = 'rgba(0,0,0,0.1)'; ctx.shadowBlur = 6;
-                    ctx.fill(); ctx.shadowBlur = 0;
-                    startAngle += slice; drawn += slice;
+                    ctx.fillStyle = s.color;
+                    ctx.shadowColor = 'rgba(0,0,0,0.05)';
+                    ctx.shadowBlur = 6;
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                    startAngle += slice;
+                    drawn += slice;
                 });
-                ctx.beginPath(); ctx.arc(cx, cy, inner, 0, Math.PI * 2);
-                ctx.fillStyle = '#fff'; ctx.fill();
+
+                // 2. Orificio interior para formar la dona
+                ctx.beginPath();
+                ctx.arc(cx, cy, inner, 0, Math.PI * 2);
+                ctx.fillStyle = '#ffffff';
+                ctx.fill();
+
+                // 3. Textos internos y fila de leyendas alineadas abajo
                 if (prog >= 1) {
-                    ctx.fillStyle = '#7A1C1C'; ctx.font = 'bold 28px Outfit'; ctx.textAlign = 'center';
-                    ctx.fillText('62%', cx, cy + 4);
-                    ctx.fillStyle = '#999'; ctx.font = '11px Inter'; ctx.fillText('Aprobacion', cx, cy + 20);
-                    var ly = H - 30;
+                    // Métrica central
+                    ctx.fillStyle = '#7A1C1C';
+                    ctx.font = 'bold 28px "Outfit", sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('62%', cx, cy + 6);
+
+                    ctx.fillStyle = '#888888';
+                    ctx.font = '500 11px "Inter", sans-serif';
+                    ctx.fillText('Aprobación', cx, cy + 24);
+
+                    // --- DISTRIBUCIÓN HORIZONTAL DE LEYENDAS ABAJO ---
+                    var ly = H - 30;  // Coordenada vertical fija en la zona baja
+                    var spacing = 24; // Espacio de separación entre bloques de leyenda
+
+                    ctx.font = '500 12px "Inter", sans-serif';
+                    var totalWidth = 0;
+
+                    // Medimos el ancho total requerido por toda la fila junta
+                    segments.forEach(function (s, idx) {
+                        var labelText = s.label + ' (' + Math.round(s.pct * 100) + '%)';
+                        var textWidth = ctx.measureText(labelText).width;
+                        totalWidth += 14 + 8 + textWidth; // Caja de color (14px) + Margen (8px) + Letras
+                        if (idx < segments.length - 1) totalWidth += spacing;
+                    });
+
+                    // Calculamos el origen X inicial para que todo quede perfectamente centrado
+                    var startX = (W - totalWidth) / 2;
+
+                    // Dibujamos los elementos uno al lado del otro horizontalmente
                     segments.forEach(function (s) {
-                        ctx.fillStyle = s.color; ctx.fillRect(cx - 120, ly - 10, 14, 14);
-                        ctx.fillStyle = '#555'; ctx.font = '12px Inter'; ctx.textAlign = 'left';
-                        ctx.fillText(s.label + ' (' + Math.round(s.pct * 100) + '%)', cx - 102, ly + 2);
-                        ly -= 22;
+                        // Cuadrado de color indicador
+                        ctx.fillStyle = s.color;
+                        ctx.fillRect(startX, ly - 11, 14, 14);
+
+                        // Texto de la leyenda
+                        ctx.fillStyle = '#444444';
+                        ctx.font = '500 12px "Inter", sans-serif';
+                        ctx.textAlign = 'left';
+                        var fullText = s.label + ' (' + Math.round(s.pct * 100) + '%)';
+                        ctx.fillText(fullText, startX + 22, ly + 1);
+
+                        // Desplazamos startX a la derecha para pintar el siguiente bloque
+                        startX += 14 + 8 + ctx.measureText(fullText).width + spacing;
                     });
                 }
-                if (prog < 1) { prog += 0.04; requestAnimationFrame(frame); }
+
+                if (prog < 1) {
+                    prog += 0.035; // Velocidad de la animación fluida
+                    requestAnimationFrame(frame);
+                }
             }
             frame();
         }
