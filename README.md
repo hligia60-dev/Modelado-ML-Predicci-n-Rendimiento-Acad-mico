@@ -1,2 +1,9 @@
-# Modelado-ML-Predicci-n-Rendimiento-Acad-mico
-Proyecto de sistema inteligente de apoyo al aprendizaje personalizado mediante IA para mejorar el rendimiento académico de los estudiantes.
+# Sistema Predictivo de Rendimiento Académico
+
+Proyecto final enfocado en el aprendizaje supervisado aplicando metodologías CRISP-ML sobre métricas educativas.
+
+## Ejecución del Tablero Interactivo
+1. Instale los paquetes requeridos:
+   ```bash
+   pip install -r requirements.txt
+   
