@@ -567,7 +567,7 @@
                     din&aacute;micas e interactivas para detectar y mitigar el rezago escolar a tiempo.</p>
                 <div class="btn-group">
                     <a href="https://modelado-ml-predicci-n-rendimiento-acad-mico-lgyqy3ulmktfgtakt.streamlit.app/" class="btn btn-accent" target="_blank"><i
-                         class="fa-solid fa-rocket"></i> Iniciar Simulador Predictivo</a>
+                             class="fa-solid fa-rocket"></i> Iniciar Simulador Predictivo</a>
                     <a href="#visualizacion" class="btn btn-outline"><i class="fa-solid fa-chart-bar"></i> Ver
                         Visualizaciones</a>
                 </div>
@@ -700,7 +700,7 @@
                     </ul>
                     <div class="btn-group" style="margin-top: 26px;">
                         <a href="https://modelado-ml-predicci-n-rendimiento-acad-mico-lgyqy3ulmktfgtakt.streamlit.app/" class="btn btn-primary" target="_blank"><i
-                                class="fa-solid fa-gauge-high"></i> Abrir Tablero Interactivo</a>
+                                style="margin-right: 6px;" class="fa-solid fa-gauge-high"></i> Abrir Tablero Interactivo</a>
                     </div>
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 16px;">
@@ -812,7 +812,6 @@
             canvas.width = cssW; canvas.height = 300;
             var W = canvas.width, H = canvas.height;
             ctx.clearRect(0, 0, W, H);
-            
             if (type === 'barras') drawBarras(ctx, W, H);
             else if (type === 'lineal') drawLineal(ctx, W, H);
             else if (type === 'donut') drawDonut(ctx, W, H);
@@ -860,125 +859,244 @@
                     }
                 });
                 ctx.fillStyle = '#888'; ctx.font = '11px Inter'; ctx.textAlign = 'center';
-                ctx.fillText('Rango de Calificaciones', W / 2, H - 6);
-                if (prog < 1) { prog += 0.04; requestAnimationFrame(frame); }
+                ctx.fillText('Rango de Calificaciones', (W - padL - padR) / 2 + padL, H - 12);
+                if (prog < 1 && currentChart === 'barras') { prog += 0.04; requestAnimationFrame(frame); }
             }
             frame();
         }
 
-        /* == AGREGADO DE FUNCIÓN DONUT CHART REQUERIDA == */
-        function drawDonut(ctx, W, H) {
-            // El eje cy se eleva un poco (-25) para dar espacio visual simétrico a las leyendas abajo
-            var cx = W / 2, 
-                cy = H / 2 - 25, 
-                r = Math.min(W, H) / 2 - 45, 
-                inner = r * 0.55;
-
-            var segments = [
-                { label: 'Aprobado', pct: 0.62, color: '#7A1C1C' },
-                { label: 'En Riesgo', pct: 0.23, color: '#D4AF37' },
-                { label: 'Reprobado', pct: 0.10, color: '#dc3545' },
-                { label: 'Desertor', pct: 0.05, color: '#999' }
+        function drawLineal(ctx, W, H) {
+            var data = [
+                { period: 'Mes 1', prom: 68, alert: 24 },
+                { period: 'Mes 2', prom: 72, alert: 18 },
+                { period: 'Mes 3', prom: 70, alert: 21 },
+                { period: 'Mes 4', prom: 75, alert: 15 },
+                { period: 'Mes 5', prom: 79, alert: 11 },
+                { period: 'Mes 6', prom: 83, alert: 8 }
             ];
+            var padL = 60, padR = 60, padT = 40, padB = 55;
+            var stepX = (W - padL - padR) / (data.length - 1);
+            var prog = 0;
+            function frame() {
+                ctx.clearRect(0, 0, W, H);
+                ctx.strokeStyle = '#f0f0f0'; ctx.lineWidth = 1;
+                for (var i = 0; i <= 4; i++) {
+                    var y = padT + (H - padT - padB) * (1 - i / 4);
+                    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+                }
+                var p1 = [], p2 = [];
+                data.forEach(function (d, i) {
+                    var x = padL + i * stepX;
+                    var yProm = padT + (H - padT - padB) * (1 - (d.prom - 50) / 50);
+                    var yAlert = padT + (H - padT - padB) * (1 - d.alert / 30);
+                    p1.push({ x: x, y: yProm }); p2.push({ x: x, y: yAlert });
+                    ctx.fillStyle = '#666'; ctx.font = '11px Inter'; ctx.textAlign = 'center';
+                    ctx.fillText(d.period, x, H - padB + 18);
+                });
+                ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+                ctx.shadowColor = 'rgba(122,28,28,0.15)'; ctx.shadowBlur = 6;
+                ctx.strokeStyle = '#7A1C1C'; ctx.beginPath();
+                p1.forEach(function (p, i) {
+                    if (i === 0) ctx.moveTo(p.x, p.y);
+                    else if (i <= Math.floor(prog * data.length)) {
+                        var prev = p1[i - 1];
+                        var ratio = Math.min(1, (prog * data.length) - i + 1);
+                        ctx.lineTo(prev.x + (p.x - prev.x) * ratio, prev.y + (p.y - prev.y) * ratio);
+                    }
+                });
+                ctx.stroke();
+                ctx.strokeStyle = '#D4AF37'; ctx.beginPath();
+                p2.forEach(function (p, i) {
+                    if (i === 0) ctx.moveTo(p.x, p.y);
+                    else if (i <= Math.floor(prog * data.length)) {
+                        var prev = p2[i - 1];
+                        var ratio = Math.min(1, (prog * data.length) - i + 1);
+                        ctx.lineTo(prev.x + (p.x - prev.x) * ratio, prev.y + (p.y - prev.y) * ratio);
+                    }
+                });
+                ctx.stroke(); ctx.shadowBlur = 0;
+                if (prog >= 1) {
+                    p1.forEach(function (p, i) {
+                        ctx.fillStyle = '#7A1C1C'; ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, Math.PI * 2); ctx.fill();
+                        ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(p.x, p.y, 2, 0, Math.PI * 2); ctx.fill();
+                        ctx.fillStyle = '#7A1C1C'; ctx.font = 'bold 10px Outfit'; ctx.textAlign = 'center';
+                        ctx.fillText(data[i].prom, p.x, p.y - 8);
+                    });
+                    p2.forEach(function (p, i) {
+                        ctx.fillStyle = '#D4AF37'; ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, Math.PI * 2); ctx.fill();
+                        ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(p.x, p.y, 2, 0, Math.PI * 2); ctx.fill();
+                        ctx.fillStyle = '#bda132'; ctx.font = 'bold 10px Outfit'; ctx.textAlign = 'center';
+                        ctx.fillText(data[i].alert, p.x, p.y - 8);
+                    });
+                }
+                ctx.fillStyle = '#7A1C1C'; ctx.font = 'bold 11px Inter'; ctx.textAlign = 'left';
+                ctx.fillText('— Promedio General (izq.)', padL, H - 12);
+                ctx.fillStyle = '#D4AF37'; ctx.font = 'bold 11px Inter'; ctx.textAlign = 'right';
+                ctx.fillText('— Alertas Críticas (der.) —', W - padR, H - 12);
+                if (prog < 1 && currentChart === 'lineal') { prog += 0.025; requestAnimationFrame(frame); }
+            }
+            frame();
+        }
+
+        function drawDonut(ctx, W, H) {
+            var data = [
+                { label: 'Promovido', count: 68, color: '#7A1C1C' },
+                { label: 'En Riesgo', count: 22, color: '#D4AF37' },
+                { label: 'Reprobado', count: 10, color: '#dc3545' }
+            ];
+            var total = data.reduce(function (a, b) { return a + b.count; }, 0);
             var prog = 0;
 
             function frame() {
                 ctx.clearRect(0, 0, W, H);
+                
+                // Centrar el círculo en el espacio restante a la izquierda
+                var centerX = W * 0.4;
+                var centerY = H * 0.5;
+                var radius = Math.min(W * 0.25, H * 0.38);
                 var startAngle = -Math.PI / 2;
-                var totalAngle = Math.PI * 2 * Math.min(1, prog);
-                var drawn = 0;
 
-                // 1. Dibujar arcos
-                segments.forEach(function (s) {
-                    var slice = s.pct * Math.PI * 2;
-                    var draw = Math.min(slice, Math.max(0, totalAngle - drawn));
-                    if (draw <= 0) return;
+                // Dibujar sectores circulares (Sin hueco de dona)
+                data.forEach(function (d) {
+                    var sliceAngle = (d.count / total) * (Math.PI * 2) * Math.min(1, prog);
+                    ctx.fillStyle = d.color;
                     ctx.beginPath();
-                    ctx.moveTo(cx, cy);
-                    ctx.arc(cx, cy, r, startAngle, startAngle + draw);
+                    ctx.moveTo(centerX, centerY);
+                    ctx.arc(centerX, centerY, radius, startAngle, startAngle + sliceAngle);
                     ctx.closePath();
-                    ctx.fillStyle = s.color;
-                    ctx.shadowColor = 'rgba(0,0,0,0.04)';
-                    ctx.shadowBlur = 6;
                     ctx.fill();
-                    ctx.shadowBlur = 0;
-                    startAngle += slice;
-                    drawn += slice;
+                    startAngle += sliceAngle;
                 });
 
-                // 2. Orificio central para formar la dona
-                ctx.beginPath();
-                ctx.arc(cx, cy, inner, 0, Math.PI * 2);
-                ctx.fillStyle = '#ffffff';
-                ctx.fill();
+                // Dibujar el bloque de Leyendas a la derecha
+                var legendX = W * 0.72;
+                var legendY = centerY - (data.length * 25) / 2;
 
-                // 3. Textos e indicadores estáticos al terminar la animación
-                if (prog >= 1) {
-                    // Texto del núcleo
-                    ctx.fillStyle = '#7A1C1C';
-                    ctx.font = 'bold 26px Outfit';
-                    ctx.textAlign = 'center';
-                    ctx.fillText('62%', cx, cy + 5);
-
-                    ctx.fillStyle = '#888';
-                    ctx.font = '500 11px Inter';
-                    ctx.fillText('Aprobación', cx, cy + 22);
-
-                    // --- DISTRIBUCIÓN HORIZONTAL CENTRADA DE LEYENDAS ---
-                    var ly = H - 25;   // Ubicación vertical inferior fija
-                    var spacing = 20;  // Separación entre bloques de leyenda
-                    ctx.font = '500 12px Inter';
+                data.forEach(function (d, i) {
+                    var curY = legendY + (i * 32);
                     
-                    var totalWidth = 0;
-                    // Medir la anchura de toda la línea de elementos para calcular el desfase inicial
-                    segments.forEach(function (s, idx) {
-                        var textStr = s.label + ' (' + Math.round(s.pct * 100) + '%)';
-                        totalWidth += 14 + 6 + ctx.measureText(textStr).width;
-                        if (idx < segments.length - 1) totalWidth += spacing;
-                    });
+                    // Indicador cuadrado de color
+                    ctx.fillStyle = d.color;
+                    ctx.beginPath();
+                    ctx.roundRect(legendX, curY - 11, 14, 14, 3);
+                    ctx.fill();
 
-                    var startX = (W - totalWidth) / 2;
+                    // Texto e información de la leyenda
+                    ctx.fillStyle = '#333';
+                    ctx.font = 'bold 13px Inter';
+                    ctx.textAlign = 'left';
+                    ctx.fillText(d.label, legendX + 22, curY);
 
-                    // Pintar cada leyenda de forma consecutiva hacia la derecha
-                    segments.forEach(function (s) {
-                        // Indicador de color cuadrado
-                        ctx.fillStyle = s.color;
-                        ctx.fillRect(startX, ly - 10, 14, 14);
+                    ctx.fillStyle = varColorText(d.color);
+                    ctx.font = '12px Outfit';
+                    ctx.fillText(d.count + '%', legendX + 115, curY);
+                });
 
-                        // Texto correspondiente
-                        ctx.fillStyle = '#444444';
-                        ctx.textAlign = 'left';
-                        var fullText = s.label + ' (' + Math.round(s.pct * 100) + '%)';
-                        ctx.fillText(fullText, startX + 20, ly + 2);
-
-                        // Desplazar x hacia la derecha para el próximo elemento
-                        startX += 14 + 6 + ctx.measureText(fullText).width + spacing;
-                    });
+                function varColorText(c) {
+                    return c === '#7A1C1C' ? '#7A1C1C' : '#555';
                 }
 
-                if (prog < 1) {
-                    prog += 0.035;
-                    requestAnimationFrame(frame);
+                if (prog < 1 && currentChart === 'donut') { 
+                    prog += 0.04; 
+                    requestAnimationFrame(frame); 
                 }
             }
             frame();
         }
 
-        /* == FUNCIONES PLACEHOLDER RESTANTES == */
-        function drawLineal(ctx, W, H) {
-            ctx.fillStyle = '#555'; ctx.font = '14px Inter'; ctx.textAlign = 'center';
-            ctx.fillText('[Gráfico Lineal - Tendencia Académica]', W / 2, H / 2);
-        }
-
         function drawScatter(ctx, W, H) {
-            ctx.fillStyle = '#555'; ctx.font = '14px Inter'; ctx.textAlign = 'center';
-            ctx.fillText('[Gráfico de Dispersión - Asistencia vs Nota]', W / 2, H / 2);
+            var points = [
+                { x: 95, y: 92, c: '#7A1C1C' }, { x: 90, y: 88, c: '#7A1C1C' }, { x: 88, y: 85, c: '#9c2828' },
+                { x: 85, y: 78, c: '#D4AF37' }, { x: 80, y: 82, c: '#9c2828' }, { x: 75, y: 68, c: '#ffc107' },
+                { x: 70, y: 72, c: '#D4AF37' }, { x: 65, y: 58, c: '#e0a9a9' }, { x: 60, y: 64, c: '#ffc107' },
+                { x: 55, y: 48, c: '#dc3545' }, { x: 82, y: 74, c: '#D4AF37' }, { x: 78, y: 80, c: '#9c2828' },
+                { x: 92, y: 95, c: '#7A1C1C' }, { x: 68, y: 60, c: '#e0a9a9' }, { x: 50, y: 42, c: '#dc3545' }
+            ];
+            var padL = 60, padR = 30, padT = 40, padB = 55;
+            var prog = 0;
+            function frame() {
+                ctx.clearRect(0, 0, W, H);
+                ctx.strokeStyle = '#e8e8e8'; ctx.lineWidth = 1;
+                for (var i = 0; i <= 4; i++) {
+                    var y = padT + (H - padT - padB) * (1 - i / 4);
+                    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+                    ctx.fillStyle = '#999'; ctx.font = '10px Inter'; ctx.textAlign = 'right';
+                    ctx.fillText((40 + i * 15), padL - 6, y + 3);
+                }
+                for (var j = 0; j <= 5; j++) {
+                    var x = padL + (W - padL - padR) * (j / 5);
+                    ctx.fillStyle = '#999'; ctx.font = '10px Inter'; ctx.textAlign = 'center';
+                    ctx.fillText((50 + j * 10) + '%', x, H - padB + 16);
+                }
+                points.forEach(function (p) {
+                    var pX = padL + (W - padL - padR) * ((p.x - 50) / 50);
+                    var pY = padT + (H - padT - padB) * (1 - (p.y - 40) / 60);
+                    ctx.fillStyle = p.c; ctx.globalAlpha = Math.min(1, prog);
+                    ctx.beginPath(); ctx.arc(pX, pY, 6 * Math.min(1, prog), 0, Math.PI * 2); ctx.fill();
+                    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke();
+                });
+                ctx.globalAlpha = 1; ctx.fillStyle = '#555'; ctx.font = '11px Inter'; ctx.textAlign = 'center';
+                ctx.fillText('Porcentaje de Asistencia (%)', (W - padL - padR) / 2 + padL, H - 12);
+                if (prog < 1 && currentChart === 'scatter') { prog += 0.05; requestAnimationFrame(frame); }
+            }
+            frame();
         }
 
-        // Ejecutar primer gráfico al cargar
-        window.onload = function() {
-            renderChart('barras');
-        };
+        /* == MINI RADAR == */
+        (function drawMiniRadar() {
+            var canvas = document.getElementById('miniRadar');
+            if (!canvas) return;
+            var ctx = canvas.getContext('2d');
+            var W = canvas.width, H = canvas.height;
+            var center = W / 2;
+            var labels = ['Asistencia', 'Tareas', 'Exámenes', 'Participación', 'Plataforma'];
+            var values = [0.85, 0.70, 0.65, 0.80, 0.90];
+            var rMax = 100;
+            ctx.clearRect(0, 0, W, H);
+            ctx.strokeStyle = '#e9ecef'; ctx.lineWidth = 1;
+            for (var r = 1; r <= 4; r++) {
+                var radius = (rMax / 4) * r;
+                ctx.beginPath();
+                for (var i = 0; i < 5; i++) {
+                    var angle = (i * Math.PI * 2 / 5) - Math.PI / 2;
+                    var x = center + radius * Math.cos(angle);
+                    var y = center + radius * Math.sin(angle);
+                    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                }
+                ctx.closePath(); ctx.stroke();
+            }
+            ctx.strokeStyle = '#dee2e6';
+            for (var i = 0; i < 5; i++) {
+                var angle = (i * Math.PI * 2 / 5) - Math.PI / 2;
+                ctx.beginPath(); ctx.moveTo(center, center);
+                ctx.lineTo(center + rMax * Math.cos(angle), center + rMax * Math.sin(angle));
+                ctx.stroke();
+                var txtX = center + (rMax + 18) * Math.cos(angle);
+                var txtY = center + (rMax + 10) * Math.sin(angle);
+                ctx.fillStyle = '#6c757d'; ctx.font = '10px Inter';
+                ctx.textAlign = Math.abs(txtX - center) < 10 ? 'center' : (txtX > center ? 'left' : 'right');
+                ctx.fillText(labels[i], txtX, txtY + 3);
+            }
+            ctx.fillStyle = 'rgba(122, 28, 28, 0.15)'; ctx.strokeStyle = '#7A1C1C'; ctx.lineWidth = 2;
+            ctx.beginPath();
+            values.forEach(function (v, i) {
+                var angle = (i * Math.PI * 2 / 5) - Math.PI / 2;
+                var x = center + rMax * v * Math.cos(angle);
+                var y = center + rMax * v * Math.sin(angle);
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            });
+            ctx.closePath(); ctx.fill(); ctx.stroke();
+            values.forEach(function (v, i) {
+                var angle = (i * Math.PI * 2 / 5) - Math.PI / 2;
+                ctx.fillStyle = '#D4AF37'; ctx.beginPath();
+                ctx.arc(center + rMax * v * Math.cos(angle), center + rMax * v * Math.sin(angle), 3.5, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        })();
+
+        // Carga inicial por defecto
+        window.addEventListener('resize', function () { renderChart(currentChart); });
+        document.addEventListener("DOMContentLoaded", function () { renderChart('barras'); });
     </script>
 </body>
 
